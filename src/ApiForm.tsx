@@ -55,8 +55,8 @@ const ApiForm: React.FC<ApiFormProps> = ({ setApiData, apiData, data }) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        url,                // API URL zur Datenbeschaffung
         columns: visibleColumns, // Sichtbare Spalten
+        data: apiData,           // Daten, die exportiert werden sollen
       }),
     })
     .then(response => {
