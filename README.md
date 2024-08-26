@@ -1,1 +1,2 @@
-# Mein neues Repository
+# Frontend für generic export server
+npm run dev
