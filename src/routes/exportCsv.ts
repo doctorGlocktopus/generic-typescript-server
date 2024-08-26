@@ -1,58 +1,48 @@
 import { Request, Response, Router } from 'express';
-import { createObjectCsvWriter } from 'csv-writer';
-import path from 'path';
-import fs from 'fs';
+import { createObjectCsvStringifier } from 'csv-writer'; // Verwenden Sie csv-writer zum Streamen von CSV-Daten
+import { PassThrough } from 'stream';
 
 const router = Router();
 
-router.post('/api/exportCsv', async (req: Request, res: Response) => {
-  const { data } = req.body;
+interface ExportCsvRequestBody {
+  columns: string[];
+  data: any[];
+}
 
-  try {
-    
-    const filePath = path.join(__dirname, 'output.csv');
+router.post('/api/exportCsv', (req: Request<{}, {}, ExportCsvRequestBody>, res: Response) => {
+  const { columns, data } = req.body;
 
-    
-    const csvWriter = createObjectCsvWriter({
-      path: filePath,
-      header: [
-        { id: 'error', title: 'Error' },
-        { id: 'category', title: 'Category' },
-        { id: 'type', title: 'Type' },
-        { id: 'setup', title: 'Setup' },
-        { id: 'delivery', title: 'Delivery' },
-        { id: 'id', title: 'ID' },
-        { id: 'lang', title: 'Language' },
-        { id: 'safe', title: 'Safe' },
-        { id: 'flags', title: 'Flags' },
-      ]
-    });
-
-    
-    const processedData = data.map((item: any) => ({
-      ...item,
-      flags: JSON.stringify(item.flags)
-    }));
-
-    
-    await csvWriter.writeRecords(processedData);
-
-    
-    res.download(filePath, 'output.csv', (err) => {
-      if (err) {
-        console.error('Error sending the file', err);
-        res.status(500).json({ message: 'Error sending the file', error: err.message });
-      }
-
-      
-      fs.unlink(filePath, (unlinkErr) => {
-        if (unlinkErr) console.error('Error deleting the file', unlinkErr);
-      });
-    });
-  } catch (error) {
-    console.error('Error exporting CSV', error);
-    res.status(500).json({ message: 'Error exporting CSV', error: error instanceof Error ? error.message : 'Unknown error' });
+  if (!Array.isArray(columns) || !Array.isArray(data) || columns.length === 0 || data.length === 0) {
+    return res.status(400).json({ message: 'Invalid columns or data provided' });
   }
+
+  // Erstellen Sie den CSV-Stringifier
+  const csvStringifier = createObjectCsvStringifier({
+    header: columns.map((column: string) => ({ id: column, title: column })),
+  });
+
+  // Erstellen Sie einen Stream, um die CSV-Daten zu senden
+  const passThrough = new PassThrough();
+  res.setHeader('Content-Disposition', 'attachment; filename="data.csv"');
+  res.setHeader('Content-Type', 'text/csv');
+  
+  // Schreiben Sie die Header-Zeile in den Stream
+  passThrough.write(csvStringifier.getHeaderString());
+
+  // Schreiben Sie jede Datenzeile in den Stream
+  data.forEach((item: any) => {
+    const row = columns.reduce((acc: { [key: string]: any }, column: string) => {
+      acc[column] = item[column];
+      return acc;
+    }, {});
+    passThrough.write(csvStringifier.stringifyRecords([row]));
+  });
+
+  // Beenden Sie den Stream
+  passThrough.end();
+
+  // Pipe den Stream in die Response
+  passThrough.pipe(res);
 });
 
 export default router;
