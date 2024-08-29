@@ -1,0 +1,87 @@
+<!-- public/dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .route {
+      margin-bottom: 20px;
+    }
+    .route button {
+      margin-top: 10px;
+    }
+    pre {
+      background-color: #f4f4f4;
+      padding: 10px;
+      border: 1px solid #ddd;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>API Dashboard</h1>
+    <div id="routes">
+      <!-- Routes will be injected here by JavaScript -->
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const routes = [
+        { method: 'GET', path: '/fetch-data', description: 'Fetch data from the server' },
+        { method: 'GET', path: '/export-csv', description: 'Export data to CSV' },
+      ];
+
+      const routesContainer = document.getElementById('routes');
+
+      routes.forEach(route => {
+        const routeDiv = document.createElement('div');
+        routeDiv.className = 'route';
+        
+        const routeTitle = document.createElement('h2');
+        routeTitle.textContent = `${route.method} ${route.path}`;
+        routeDiv.appendChild(routeTitle);
+
+        const description = document.createElement('p');
+        description.textContent = route.description;
+        routeDiv.appendChild(description);
+
+        const responseArea = document.createElement('pre');
+        responseArea.id = `response-${route.path.replace(/\//g, '-')}`;
+        routeDiv.appendChild(responseArea);
+
+        const requestButton = document.createElement('button');
+        requestButton.textContent = 'Test Route';
+        requestButton.onclick = () => {
+          fetch(route.path, { method: route.method })
+            .then(response => response.json())
+            .then(data => {
+              document.getElementById(`response-${route.path.replace(/\//g, '-')}`).textContent = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+              document.getElementById(`response-${route.path.replace(/\//g, '-')}`).textContent = `Error: ${error.message}`;
+            });
+        };
+        routeDiv.appendChild(requestButton);
+
+        routesContainer.appendChild(routeDiv);
+      });
+    });
+  </script>
+</body>
+</html>
