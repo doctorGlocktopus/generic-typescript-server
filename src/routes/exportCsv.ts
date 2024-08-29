@@ -16,20 +16,16 @@ router.post('/api/exportCsv', (req: Request<{}, {}, ExportCsvRequestBody>, res: 
     return res.status(400).json({ message: 'Invalid columns or data provided' });
   }
 
-  // Erstellen Sie den CSV-Stringifier
   const csvStringifier = createObjectCsvStringifier({
     header: columns.map((column: string) => ({ id: column, title: column })),
   });
 
-  // Erstellen Sie einen Stream, um die CSV-Daten zu senden
   const passThrough = new PassThrough();
   res.setHeader('Content-Disposition', 'attachment; filename="data.csv"');
   res.setHeader('Content-Type', 'text/csv');
   
-  // Schreiben Sie die Header-Zeile in den Stream
   passThrough.write(csvStringifier.getHeaderString());
 
-  // Schreiben Sie jede Datenzeile in den Stream
   data.forEach((item: any) => {
     const row = columns.reduce((acc: { [key: string]: any }, column: string) => {
       acc[column] = item[column];
@@ -38,10 +34,8 @@ router.post('/api/exportCsv', (req: Request<{}, {}, ExportCsvRequestBody>, res: 
     passThrough.write(csvStringifier.stringifyRecords([row]));
   });
 
-  // Beenden Sie den Stream
   passThrough.end();
 
-  // Pipe den Stream in die Response
   passThrough.pipe(res);
 });
 

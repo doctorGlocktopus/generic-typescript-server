@@ -1,18 +1,19 @@
 import express from 'express';
 import cors from 'cors';
+import fileUpload from 'express-fileupload';
 import fetchDataRouter from './routes/fetchData';
 import exportCsvRouter from './routes/exportCsv';
 
 const app = express();
 const port = 3001;
 app.use(cors({
-    origin: 'http://localhost:3000', // Erlaubt nur Anfragen von diesem Origin
-    methods: ['GET', 'POST'],         // Erlaubte HTTP-Methoden
-    allowedHeaders: ['Content-Type'], // Erlaubte Header
+    origin: 'http://localhost:3000',
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type'],
   }));
 app.use(express.json());
+app.use(fileUpload());
 
-// Use the routes
 app.use(fetchDataRouter);
 app.use(exportCsvRouter);
 
