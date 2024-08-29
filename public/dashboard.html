@@ -43,8 +43,8 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const routes = [
-        { method: 'GET', path: '/fetch-data', description: 'Fetch data from the server' },
-        { method: 'GET', path: '/export-csv', description: 'Export data to CSV' },
+        { method: 'GET', path: '/fetch-data', description: 'Fetch data from the server' , url: 'https://v2.jokeapi.dev/joke/Any?lang=de'},
+        { method: 'GET', path: '/export-csv', description: 'Export data to CSV'  , url: 'https://v2.jokeapi.dev/joke/Any?lang=de'},
       ];
 
       const routesContainer = document.getElementById('routes');
@@ -68,14 +68,30 @@
         const requestButton = document.createElement('button');
         requestButton.textContent = 'Test Route';
         requestButton.onclick = () => {
-          fetch(route.path, { method: route.method })
-            .then(response => response.json())
-            .then(data => {
-              document.getElementById(`response-${route.path.replace(/\//g, '-')}`).textContent = JSON.stringify(data, null, 2);
-            })
-            .catch(error => {
-              document.getElementById(`response-${route.path.replace(/\//g, '-')}`).textContent = `Error: ${error.message}`;
-            });
+          const headers = {
+            'Content-Type': 'application/json',
+          };
+
+          try {
+            fetch(route.url, { method: 'GET', headers })
+              .then(response => {
+                if (!response.ok) {
+                  throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+              })
+              .then(data => {
+                // Ausgabe der Antwortdaten im DOM-Element
+                document.getElementById(`response-${route.path.replace(/\//g, '-')}`).textContent = JSON.stringify(data, null, 2);
+              })
+              .catch(error => {
+                // Fehlerbehandlung und Ausgabe des Fehlers im DOM-Element
+                document.getElementById(`response-${route.path.replace(/\//g, '-')}`).textContent = `Error: ${error.message}`;
+              });
+          } catch (error) {
+            // Dieser Catch-Block wird hier nicht wirklich genutzt, weil fetch selbst Fehler abfängt
+            document.getElementById(`response-${route.path.replace(/\//g, '-')}`).textContent = `Error: ${error.message}`;
+          }
         };
         routeDiv.appendChild(requestButton);
 
