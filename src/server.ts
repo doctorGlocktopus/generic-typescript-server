@@ -1,8 +1,8 @@
 import express from 'express';
 import cors from 'cors';
-import fileUpload from 'express-fileupload';
 import fetchDataRouter from './routes/fetchData';
 import exportCsvRouter from './routes/exportCsv';
+import path from 'path';
 
 const app = express();
 const port = 3001;
@@ -11,8 +11,12 @@ app.use(cors({
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type'],
   }));
-app.use(express.json());
-app.use(fileUpload());
+
+app.use(express.static(path.join(__dirname, '../public')));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/dashboard.html'));
+});
 
 app.use(fetchDataRouter);
 app.use(exportCsvRouter);
