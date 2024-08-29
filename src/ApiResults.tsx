@@ -22,8 +22,8 @@ const ApiResults: React.FC<ApiResultsProps> = ({ data }) => {
                 {Object.entries(item).map(([key, value], index) => (
                   <td key={index}>
                     {typeof value === 'object' && value !== null
-                      ? JSON.stringify(value) // Konvertiert das Objekt in einen lesbaren JSON-String
-                      : value?.toString()      // Konvertiert den Wert in einen String
+                      ? JSON.stringify(value)
+                      : value?.toString()
                     }
                   </td>
                 ))}
