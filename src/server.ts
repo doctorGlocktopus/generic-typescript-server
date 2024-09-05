@@ -12,6 +12,8 @@ app.use(cors({
     allowedHeaders: ['Content-Type'],
   }));
 
+  app.use(express.json());
+
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.get('/', (req, res) => {

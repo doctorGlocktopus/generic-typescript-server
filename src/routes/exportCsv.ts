@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
-import { createObjectCsvStringifier } from 'csv-writer';
 import fetch from 'node-fetch';
 import { PassThrough } from 'stream';
+import CsvStringifier from '../components/CsvStringifier';
 
 interface ExportCsvRequestBody {
   columns: string[];
@@ -13,19 +13,18 @@ const router = express.Router();
 
 router.post('/api/exportCsv', async (req: Request<{}, {}, ExportCsvRequestBody>, res: Response) => {
   try {
-    const { columns, url, apiKeys } = req.body;
-    console.log('Received columns:', columns);
-    console.log('Received URL:', url);
-    console.log('Received API Keys:', apiKeys);
+    const { columns, url, apiKeys } = req.body || {};
 
-    if (!columns || !url || !Array.isArray(apiKeys)) {
-      return res.status(400).send('Invalid request body');
+    if (!columns || !url) {
+      return res.status(400).send('Invalid request body. Columns and URL are required.');
     }
 
     const headers: Record<string, string> = {};
-    apiKeys.forEach(({ key, value }) => {
-      if (key && value) headers[key] = value;
-    });
+    if (apiKeys.length) {
+      apiKeys.forEach(({ key, value }) => {
+        if (key && value) headers[key] = value;
+      });
+    }
 
     const response = await fetch(url, {
       method: 'GET',
@@ -39,27 +38,20 @@ router.post('/api/exportCsv', async (req: Request<{}, {}, ExportCsvRequestBody>,
 
     const data = await response.json();
 
-    if (!Array.isArray(data) || data.length === 0) {
+    const dataArray = Array.isArray(data) ? data : [data];
+    if (dataArray.length === 0) {
       return res.status(400).send('Invalid data format or empty data');
     }
-
-    const csvStringifier = createObjectCsvStringifier({
-      header: columns.map((column) => ({ id: column, title: column })),
-    });
 
     const passThrough = new PassThrough();
     res.setHeader('Content-Disposition', 'attachment; filename="data.csv"');
     res.setHeader('Content-Type', 'text/csv');
 
-    passThrough.write(csvStringifier.getHeaderString());
+    passThrough.write(columns.join(',') + '\n');
 
-    data.forEach((item: any) => {
-      const row = columns.reduce((acc: { [key: string]: any }, column: string) => {
-        acc[column] = item[column];
-        return acc;
-      }, {});
-
-      passThrough.write(csvStringifier.stringifyRecords([row]));
+    dataArray.forEach((item: any) => {
+      const recorder = new CsvStringifier(item, columns.join(','));
+      recorder.appendToStream(passThrough, columns);
     });
 
     passThrough.end();
@@ -70,5 +62,6 @@ router.post('/api/exportCsv', async (req: Request<{}, {}, ExportCsvRequestBody>,
     res.status(500).send('Error exporting CSV');
   }
 });
+
 
 export default router;
