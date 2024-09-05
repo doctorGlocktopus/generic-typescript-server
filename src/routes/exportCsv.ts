@@ -6,6 +6,7 @@ import CsvStringifier from '../components/CsvStringifier';
 interface ExportCsvRequestBody {
   columns: string[];
   url: string;
+  excludedColumns: Record<string, boolean>;
   apiKeys: { key: string; value: string }[];
 }
 
@@ -13,10 +14,10 @@ const router = express.Router();
 
 router.post('/api/exportCsv', async (req: Request<{}, {}, ExportCsvRequestBody>, res: Response) => {
   try {
-    const { columns, url, apiKeys } = req.body || {};
+    const { columns, url, excludedColumns, apiKeys } = req.body || {};
 
-    if (!columns || !url) {
-      return res.status(400).send('Invalid request body. Columns and URL are required.');
+    if (!columns || !url || !excludedColumns) {
+      return res.status(400).send('Invalid request body. Columns, URL, and excludedColumns are required.');
     }
 
     const headers: Record<string, string> = {};
@@ -43,15 +44,17 @@ router.post('/api/exportCsv', async (req: Request<{}, {}, ExportCsvRequestBody>,
       return res.status(400).send('Invalid data format or empty data');
     }
 
+    const filteredColumns = columns.filter(col => excludedColumns[col]);
+
     const passThrough = new PassThrough();
     res.setHeader('Content-Disposition', 'attachment; filename="data.csv"');
     res.setHeader('Content-Type', 'text/csv');
 
-    passThrough.write(columns.join(',') + '\n');
+    passThrough.write(filteredColumns.join(',') + '\n');
 
     dataArray.forEach((item: any) => {
-      const recorder = new CsvStringifier(item, columns.join(','));
-      recorder.appendToStream(passThrough, columns);
+      const recorder = new CsvStringifier(item, filteredColumns.join(','));
+      recorder.appendToStream(passThrough, filteredColumns);
     });
 
     passThrough.end();
@@ -62,6 +65,5 @@ router.post('/api/exportCsv', async (req: Request<{}, {}, ExportCsvRequestBody>,
     res.status(500).send('Error exporting CSV');
   }
 });
-
 
 export default router;
