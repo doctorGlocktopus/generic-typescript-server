@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import fetchDataRouter from './routes/fetchData';
 import exportCsvRouter from './routes/exportCsv';
-import exportPdfRouter from './routes/exportPdf';
+// import exportPdfRouter from './routes/exportPdf';
 import path from 'path';
 
 const app = express();
@@ -24,7 +24,7 @@ app.get('/', (req, res) => {
 
 app.use(fetchDataRouter);
 app.use(exportCsvRouter);
-app.use(exportPdfRouter);
+// app.use(exportPdfRouter);
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);

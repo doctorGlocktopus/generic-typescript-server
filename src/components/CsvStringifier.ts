@@ -1,51 +1,37 @@
+import { Readable } from 'stream';
+
 class CsvStringifier {
-    private data: { [key: string]: any };
-  
-    constructor(data: any, requestedLines: string) {
-      this.data = this.filterData(data, requestedLines);
-    }
-  
-    private filterData(data: any, requestedLines: string): { [key: string]: any } {
-      let filteredData: { [key: string]: any } = {};
-      requestedLines.split(',').forEach(prop => {
-        if (typeof data[prop] === 'object' && data[prop] !== null) {
-          filteredData[prop] = '';
-          Object.entries(data[prop]).forEach(([key, value]) => {
-            if (typeof value === 'object' && value !== null) {
-              Object.entries(value).forEach(([nestedKey, nestedVal]) => {
-                filteredData[prop] += `"${nestedKey}: ${nestedVal}" `;
-              });
-            } else {
-              filteredData[prop] += `"${key}: ${value !== null ? value : 'leeres Feld'}" `;
-            }
-          });
-        } else {
-          if (data.hasOwnProperty(prop)) {
-            filteredData[prop] = data[prop];
-            if (typeof filteredData[prop] === 'boolean') {
-              filteredData[prop] = filteredData[prop] ? 'ja' : 'nein';
-            }
-          }
-        }
-      });
-      return filteredData;
-    }
-  
-    public appendToStream(readableStream: NodeJS.WritableStream, header: string[]): void {
-      try {
-        const headerLine = header.join(',') + '\n';
-        let dataLine = header.map(prop => {
-          const value = this.data[prop];
-          return value !== undefined ? value.toString().replace(/"/g, '""') : '';
-        }).join(',') + '\n';
-  
-        // readableStream.write(headerLine);
-        readableStream.write(dataLine);
-      } catch (err) {
-        console.error(err);
-      }
-    }
+  private data: any[];
+  private columns: string[];
+
+  constructor(data: any[], columns: string[]) {
+    this.data = data;
+    this.columns = columns;
   }
-  
-  export default CsvStringifier;
-  
+
+  private escapeCsvValue(value: any): string {
+    if (value == null) return '';
+    if (typeof value === 'boolean') return value ? 'ja' : 'nein';
+    const stringValue = value.toString().replace(/"/g, '""');
+    return `"${stringValue}"`;
+  }
+
+  private generateCsvString(): string {
+    const headerLine = this.columns.join(',') + '\n';
+    const dataLines = this.data.map(row => 
+      this.columns.map(col => this.escapeCsvValue(row[col])).join(',')
+    ).join('\n');
+
+    return headerLine + dataLines + '\n';
+  }
+
+  public getCsvStream(): Readable {
+    const csvString = this.generateCsvString();
+    const readableStream = new Readable();
+    readableStream.push(csvString);
+    readableStream.push(null); // End of stream
+    return readableStream;
+  }
+}
+
+export default CsvStringifier;

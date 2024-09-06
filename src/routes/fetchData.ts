@@ -5,7 +5,7 @@ const router = Router();
 
 router.post('/api/fetchData', async (req: Request, res: Response) => {
   const { url, apiKeys } = req.body;
-
+console.log(1)
   try {
     const headers = new Headers();
     apiKeys.forEach(({ key, value }: { key: string; value: string }) => {
