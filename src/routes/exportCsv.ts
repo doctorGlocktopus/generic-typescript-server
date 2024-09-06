@@ -12,12 +12,9 @@ interface ExportCsvRequestBody {
 const router = express.Router();
 
 router.post('/api/exportCsv', async (req: Request<{}, {}, ExportCsvRequestBody>, res: Response) => {
+
   try {
     const { columns, url, excludedColumns, apiKeys } = req.body;
-
-    if (!columns || !url || !excludedColumns) {
-      return res.status(400).send('Invalid request body. Columns, URL, and excludedColumns are required.');
-    }
 
     const data = await ExportService.fetchData({ columns, url, excludedColumns, apiKeys });
     const filteredData = ExportService.filterData(data, columns, excludedColumns);
